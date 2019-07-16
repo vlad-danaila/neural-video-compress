@@ -24,6 +24,9 @@ conda list --export > conda_dependencies.txt
 You can enable the created conda environment with:
 conda activate neural-video-compress
 
+If you get an error while issuing the command above, in the GIT bash on Windows, please issue the command:
+git init bash
+
 In case you would like to list all conda environments please use:
 conda info --envs
 
