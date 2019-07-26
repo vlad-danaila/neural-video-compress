@@ -1,4 +1,5 @@
 import numpy as np
+from torch.utils.data import Dataset, DataLoader
 import util
 
 # Dataset downloaded from http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy
@@ -25,11 +26,38 @@ def plot_animation_3_slices(limit = 2):
             break
         frame_1, frame_3 = x
         frame_2 = y
-        frames.append(frame_1)
-        frames.append(frame_2)
-        frames.append(frame_3)
+        frames += [frame_1, frame_2, frame_3]
         limit -= 1
     util.plot_animation(frames)
+
+def plot_animation_3_slices_from_MovingMNIST3Frames(limit = 2):
+    frames = []
+    dataset_3_slices = MovingMNIST3Frames()
+    for i in range(limit):
+        x, y = dataset_3_slices.__getitem__(i)
+        frame_1, frame_3 = x
+        frame_2 = y
+        frames += [frame_1, frame_2, frame_3]
+    util.plot_animation(frames)
+
+class MovingMNIST3Frames(Dataset):
+
+    def __init__(self):
+        self.dataset = load_dataset()
+        self.count_movies = 0
+        self.count_frames = 0
+        self.nr_movies = dataset.shape[0]
+        self.nr_slices = dataset.shape[1] - 2
+
+    def __len__(self):
+        return self.nr_movies * self.nr_slices
+
+    def __getitem__(self, idx):
+        i, j = self.count_movies, self.count_frames
+        self.count_frames = (self.count_frames + 1) % self.nr_slices
+        if self.count_frames == 0:
+            self.count_movies = (self.count_movies + 1) % self.nr_movies
+        return ((self.dataset[i, j], self.dataset[i, j + 2]), self.dataset[i, j + 1])
 
 if __name__ == '__main__':
     dataset = load_dataset()
@@ -41,4 +69,12 @@ if __name__ == '__main__':
     # util.plot_animation(dataset[2])
 
     # Plot animation of 3 slices
-    plot_animation_3_slices()
+    # plot_animation_3_slices()
+
+    # Plot 3 frames slices from MovingMNIST3Frames
+    # plot_animation_3_slices_from_MovingMNIST3Frames(19)
+
+    # Plot using dataset loade
+    dataloader = DataLoader(MovingMNIST3Frames(), batch_size=4, shuffle=True, num_workers=4)
+    for i_batch, sample_batched in enumerate(dataloader):
+        print(i_batch, sample_batched)
