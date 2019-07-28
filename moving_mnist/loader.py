@@ -1,5 +1,6 @@
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
+import torch as t
 import util
 
 # Dataset downloaded from http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy
@@ -57,10 +58,11 @@ class MovingMNIST3Frames(Dataset):
         self.count_frames = (self.count_frames + 1) % self.nr_slices
         if self.count_frames == 0:
             self.count_movies = (self.count_movies + 1) % self.nr_movies
-        x_init = np.expand_dims(self.dataset[i, j], 0)
-        x_fin = np.expand_dims(self.dataset[i, j + 2], 0)
+        x = np.stack([self.dataset[i, j], self.dataset[i, j + 2]], 0)
         y = np.expand_dims(self.dataset[i, j + 1], 0)
-        return ((x_init, x_fin), y)
+        x = t.from_numpy(x).float()
+        y = t.from_numpy(y).float()
+        return [x, y]
 
 if __name__ == '__main__':
     dataset = load_dataset()
