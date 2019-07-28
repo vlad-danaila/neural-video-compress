@@ -59,7 +59,9 @@ class MovingMNIST3Frames(Dataset):
         if self.count_frames == 0:
             self.count_movies = (self.count_movies + 1) % self.nr_movies
         x = np.stack([self.dataset[i, j], self.dataset[i, j + 2]], 0)
+        x = np.true_divide(x, 255)
         y = np.expand_dims(self.dataset[i, j + 1], 0)
+        y = np.true_divide(y, 255)
         x = t.from_numpy(x).float()
         y = t.from_numpy(y).float()
         return [x, y]
