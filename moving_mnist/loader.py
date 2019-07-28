@@ -46,8 +46,8 @@ class MovingMNIST3Frames(Dataset):
         self.dataset = load_dataset()
         self.count_movies = 0
         self.count_frames = 0
-        self.nr_movies = dataset.shape[0]
-        self.nr_slices = dataset.shape[1] - 2
+        self.nr_movies = self.dataset.shape[0]
+        self.nr_slices = self.dataset.shape[1] - 2
 
     def __len__(self):
         return self.nr_movies * self.nr_slices
@@ -57,7 +57,10 @@ class MovingMNIST3Frames(Dataset):
         self.count_frames = (self.count_frames + 1) % self.nr_slices
         if self.count_frames == 0:
             self.count_movies = (self.count_movies + 1) % self.nr_movies
-        return ((self.dataset[i, j], self.dataset[i, j + 2]), self.dataset[i, j + 1])
+        x_init = np.expand_dims(self.dataset[i, j], 0)
+        x_fin = np.expand_dims(self.dataset[i, j + 2], 0)
+        y = np.expand_dims(self.dataset[i, j + 1], 0)
+        return ((x_init, x_fin), y)
 
 if __name__ == '__main__':
     dataset = load_dataset()
@@ -74,7 +77,7 @@ if __name__ == '__main__':
     # Plot 3 frames slices from MovingMNIST3Frames
     # plot_animation_3_slices_from_MovingMNIST3Frames(19)
 
-    # Plot using dataset loade
-    dataloader = DataLoader(MovingMNIST3Frames(), batch_size=4, shuffle=True, num_workers=4)
-    for i_batch, sample_batched in enumerate(dataloader):
-        print(i_batch, sample_batched)
+    # Use pytorch dataset loader
+    # dataloader = DataLoader(MovingMNIST3Frames(), batch_size=4, shuffle=True, num_workers=4)
+    # for i_batch, sample_batched in enumerate(dataloader):
+    #     print(i_batch, sample_batched)
