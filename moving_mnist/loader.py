@@ -7,9 +7,9 @@ import util
 # Documentation at http://www.cs.toronto.edu/~nitish/unsupervised_video/
 DATASET_PATH = '../../mnist_test_seq.npy'
 
-def load_dataset():
+def load_dataset(path=DATASET_PATH):
     # Shape (20, 10000, 64, 64) sequence length, nr. of sequences, image sizes
-    dataset = np.load(DATASET_PATH)
+    dataset = np.load(path)
     # Shape (10000, 20, 64, 64) nr. of sequences, seq length, image sizes
     dataset = np.swapaxes(dataset, 0, 1)
     return dataset
@@ -36,14 +36,13 @@ def plot_animation_3_slices_from_MovingMNIST3Frames(limit = 2):
     dataset_3_slices = MovingMNIST3Frames()
     for i in range(limit):
         x, y = dataset_3_slices.__getitem__(i)
-        frame_1, frame_3 = x
-        frame_2 = y
+        frame_1, frame_2, frame_3 = x[0] * 255, y[0] * 255, x[1] * 255
         frames += [frame_1, frame_2, frame_3]
     util.plot_animation(frames)
 
 class MovingMNIST3Frames(Dataset):
 
-    def __init__(self):
+    def __init__(self, path = DATASET_PATH):
         self.dataset = load_dataset()
         self.count_movies = 0
         self.count_frames = 0
