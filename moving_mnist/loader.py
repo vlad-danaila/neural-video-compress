@@ -43,7 +43,7 @@ def plot_animation_3_slices_from_MovingMNIST3Frames(limit = 2):
 class MovingMNIST3Frames(Dataset):
 
     def __init__(self, path = DATASET_PATH):
-        self.dataset = load_dataset()
+        self.dataset = load_dataset(path)
         self.count_movies = 0
         self.count_frames = 0
         self.nr_movies = self.dataset.shape[0]
