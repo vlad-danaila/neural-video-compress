@@ -13,26 +13,30 @@ device = t.device("cuda:0" if t.cuda.is_available() else "cpu")
 PATH = '/content/drive/My Drive/mnist_test_seq.npy'
 # PATH = loader.DATASET_PATH
 
+class MinimalCNN(t.nn.Module):
+    def __init__(self):
+        super(MinimalCNN, self).__init__()
+        self.conv1 = t.nn.Conv2d(in_channels = 2, out_channels = 1, kernel_size = 9, padding = 4)
+    def forward(self, x):
+        x = self.conv1(x)
+        return x
+
 class SimpleCNN(t.nn.Module):
     def __init__(self):
         super(SimpleCNN, self).__init__()
-        self.conv1 = t.nn.Conv2d(in_channels=2, out_channels=6, kernel_size=5, padding=2)
-        # self.conv1 = t.nn.Conv2d(3, 6, 5)
+        self.conv1 = t.nn.Conv2d(in_channels=2, out_channels=8, kernel_size=5, padding=2)
         self.pool = t.nn.MaxPool2d(2, 2)
-        self.conv2 = t.nn.Conv2d(in_channels=6, out_channels=11, kernel_size=5, padding=2)
-        # self.conv2 = t.nn.Conv2d(6, 16, 5)
-        self.fc1 = t.nn.Linear(11 * 16 * 16, 64 * 64 * 5)
-        self.fc2 = t.nn.Linear(64 * 64 * 5, 64 * 64 * 3)
-        self.fc3 = t.nn.Linear(64 * 64 * 3, 64 * 64)
+        self.conv2 = t.nn.Conv2d(in_channels=8, out_channels=16, kernel_size=5, padding=2)
+        self.fc1 = t.nn.Linear(16 * 16 * 16, 64 * 64)
+        self.fc1 = t.nn.Linear(16 * 16 * 16, 64 * 64 * 3)
+        self.fc2 = t.nn.Linear(64 * 64 * 3, 64 * 64)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 11 * 16 * 16)
+        x = x.view(-1, 16 * 16 * 16)
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        # return x.view(-1, 1, 64, 64)
+        x = self.fc2(x)
         return x
 
 def train_cnn(path = loader.DATASET_PATH):
@@ -63,7 +67,7 @@ def train_cnn(path = loader.DATASET_PATH):
           # print statistics
           running_loss += loss.item()
           if i % 100 == 0:  # print every 100 mini-batches
-              print('[%d] loss: %.3f' % (i, running_loss / 10))
+              print('[%d] loss: %.3f' % (i, running_loss / 100))
               running_loss = 0.0
       scheduler.step()
     return cnn
@@ -81,6 +85,6 @@ def plot_3_frames(model):
     [util.plot_grayscale(f) for f in [frame_1, frame_2, frame_3]]
 
 if __name__ == '__main__':
-    model = train_cnn(PATH)
-#     model = SimpleCNN().to(device)
-    plot_3_frames(model)
+#     model = train_cnn(PATH)
+#     model = MinimalCNN().to(device)
+#     plot_3_frames(model)
