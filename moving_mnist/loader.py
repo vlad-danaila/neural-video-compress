@@ -66,7 +66,7 @@ class MovingMNIST3Frames(Dataset):
         return [x, y]
 
 if __name__ == '__main__':
-    dataset = load_dataset()
+    # dataset = load_dataset()
 
     # Plot a single image
     # util.plot_grayscale(dataset[1, 1])
@@ -84,3 +84,5 @@ if __name__ == '__main__':
     # dataloader = DataLoader(MovingMNIST3Frames(), batch_size=4, shuffle=True, num_workers=4)
     # for i_batch, sample_batched in enumerate(dataloader):
     #     print(i_batch, sample_batched)
+
+    pass

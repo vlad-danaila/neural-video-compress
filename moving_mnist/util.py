@@ -14,5 +14,5 @@ def plot_animation(frames):
     for i in range(len(frames)):
         im = plt.imshow(frames[i], cmap='gray', vmin=0, vmax=255)
         ims.append([im])
-    ani = animation.ArtistAnimation(fig, ims, interval=100, blit=True, repeat_delay=1000)
+    ani = animation.ArtistAnimation(fig, ims, interval=1000, blit=True, repeat_delay=1000)
     plt.show()

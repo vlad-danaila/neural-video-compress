@@ -1,4 +1,5 @@
 import loader
+import util
 from torch.utils.data import DataLoader
 import numpy as np
 import torch as t
@@ -45,5 +46,19 @@ def train_minimal_cnn(path = loader.DATASET_PATH):
             print('[%d] loss: %.3f' % (i, running_loss / 10))
             running_loss = 0.0
 
+    return minimalCNN
+
+def plot_animation(model):
+    frames = []
+    dataset_3_slices = loader.MovingMNIST3Frames()
+    for i in range(1):
+        x, y = dataset_3_slices.__getitem__(i)
+        frame_1, frame_3 = x[0] * 255, x[1] * 255
+        x = x.unsqueeze(0)
+        frame_2 = (model(x)[0, 0] * 255).detach().numpy()
+        frames += [frame_1, frame_2, frame_3]
+    util.plot_animation(frames)
+
 if __name__ == '__main__':
-    train_minimal_cnn()
+    model = train_minimal_cnn()
+    plot_animation(model)
