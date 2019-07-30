@@ -9,6 +9,10 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import torch.optim as optim
 
+device = t.device("cuda:0" if t.cuda.is_available() else "cpu")
+# PATH = '/content/drive/My Drive/mnist_test_seq.npy'
+PATH = loader.DATASET_PATH
+
 class MinimalCNN(t.nn.Module):
     def __init__(self):
         super(MinimalCNN, self).__init__()
@@ -18,12 +22,11 @@ class MinimalCNN(t.nn.Module):
         return x
 
 def train_minimal_cnn(path = loader.DATASET_PATH):
-    device = t.device("cuda:0" if t.cuda.is_available() else "cpu")
     minimalCNN = MinimalCNN()
     minimalCNN.to(device)
-    dataloader = DataLoader(loader.MovingMNIST3Frames(path), batch_size=50, shuffle=False)
+    dataloader = DataLoader(loader.MovingMNIST3Frames(path), batch_size=30, shuffle=False)
     criterion = t.nn.L1Loss()
-    optimizer = optim.SGD(minimalCNN.parameters(), lr=0.01, momentum=0.9)
+    optimizer = optim.SGD(minimalCNN.parameters(), lr=0.0001, momentum=0.9)
     running_loss = 0.0
 
     for i, data in enumerate(dataloader):
@@ -48,17 +51,16 @@ def train_minimal_cnn(path = loader.DATASET_PATH):
 
     return minimalCNN
 
-def plot_animation(model):
+def plot_3_frames(model):
     frames = []
-    dataset_3_slices = loader.MovingMNIST3Frames()
-    for i in range(1):
-        x, y = dataset_3_slices.__getitem__(i)
-        frame_1, frame_3 = x[0] * 255, x[1] * 255
-        x = x.unsqueeze(0)
-        frame_2 = (model(x)[0, 0] * 255).detach().numpy()
-        frames += [frame_1, frame_2, frame_3]
-    util.plot_animation(frames)
+    dataset_3_slices = loader.MovingMNIST3Frames(PATH)
+    x, y = dataset_3_slices.__getitem__(0)
+    frame_1, frame_3 = x[0] * 255, x[1] * 255
+    x = x.unsqueeze(0).to(device)
+    frame_2 = (model(x)[0, 0] * 255).detach().cpu().numpy()
+    [util.plot_grayscale(f) for f in [frame_1, frame_2, frame_3]]
 
 if __name__ == '__main__':
-    model = train_minimal_cnn()
-    plot_animation(model)
+    # model = train_minimal_cnn(PATH)
+    model = MinimalCNN()
+    plot_3_frames(model)
