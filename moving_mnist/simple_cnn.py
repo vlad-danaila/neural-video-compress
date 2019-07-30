@@ -10,8 +10,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 device = t.device("cuda:0" if t.cuda.is_available() else "cpu")
-# PATH = '/content/drive/My Drive/mnist_test_seq.npy'
-PATH = loader.DATASET_PATH
+PATH = '/content/drive/My Drive/mnist_test_seq.npy'
+# PATH = loader.DATASET_PATH
 
 class SimpleCNN(t.nn.Module):
     def __init__(self):
@@ -44,7 +44,7 @@ def train_cnn(path = loader.DATASET_PATH):
     scheduler = t.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
     running_loss = 0.0
     for j in range(1):
-      print('EPOCH ', i)
+      print('EPOCH ', j)
       for i, data in enumerate(dataloader):
           # x shape = 50 x 2 x 64 x 64
           # y shape = 50 x 1 x 64 x 64
@@ -81,6 +81,6 @@ def plot_3_frames(model):
     [util.plot_grayscale(f) for f in [frame_1, frame_2, frame_3]]
 
 if __name__ == '__main__':
-#     model = train_minimal_cnn(PATH)
-    model = SimpleCNN().to(device)
+    model = train_cnn(PATH)
+#     model = SimpleCNN().to(device)
     plot_3_frames(model)
