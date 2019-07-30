@@ -10,8 +10,10 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 device = t.device("cuda:0" if t.cuda.is_available() else "cpu")
-# PATH = '/content/drive/My Drive/mnist_test_seq.npy'
-PATH = loader.DATASET_PATH
+PATH = '/content/drive/My Drive/mnist_test_seq.npy'
+
+
+# PATH = loader.DATASET_PATH
 
 class MinimalCNN(t.nn.Module):
     def __init__(self):
@@ -52,8 +54,8 @@ class FullyCNN(t.nn.Module):
         self.deconv2 = t.nn.ConvTranspose2d(in_channels=8, out_channels=1, kernel_size=5, padding=2)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
         x = F.relu(self.deconv1(x))
         x = self.deconv2(x)
         return x
@@ -65,7 +67,7 @@ def train_cnn(cnn, path=loader.DATASET_PATH):
     optimizer = optim.SGD(cnn.parameters(), lr=0.1, momentum=0.9)
     scheduler = t.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
     running_loss = 0.0
-    for j in range(1):
+    for j in range(5):
         print('EPOCH ', j)
         for i, data in enumerate(dataloader):
             # x shape = 50 x 2 x 64 x 64
