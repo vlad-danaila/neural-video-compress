@@ -13,14 +13,6 @@ device = t.device("cuda:0" if t.cuda.is_available() else "cpu")
 # PATH = '/content/drive/My Drive/mnist_test_seq.npy'
 PATH = loader.DATASET_PATH
 
-class MinimalCNN(t.nn.Module):
-    def __init__(self):
-        super(MinimalCNN, self).__init__()
-        self.conv1 = t.nn.Conv2d(in_channels = 2, out_channels = 1, kernel_size = 9, padding = 4)
-    def forward(self, x):
-        x = self.conv1(x)
-        return x
-
 class SimpleCNN(t.nn.Module):
     def __init__(self):
         super(SimpleCNN, self).__init__()
@@ -40,27 +32,30 @@ class SimpleCNN(t.nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
-        return x.view(-1, 1, 64, 64)
+        # return x.view(-1, 1, 64, 64)
+        return x
 
-def train_minimal_cnn(path = loader.DATASET_PATH):
-    minimalCNN = MinimalCNN()
-    minimalCNN.to(device)
+def train_cnn(path = loader.DATASET_PATH):
+    cnn = SimpleCNN()
+    cnn.to(device)
     dataloader = DataLoader(loader.MovingMNIST3Frames(path), batch_size=30, shuffle=False)
     criterion = t.nn.L1Loss()
-    optimizer = optim.SGD(minimalCNN.parameters(), lr=0.1, momentum=0.9)
+    optimizer = optim.SGD(cnn.parameters(), lr=0.1, momentum=0.9)
     scheduler = t.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
     running_loss = 0.0
-    for j in range(5):
+    for j in range(1):
+      print('EPOCH ', i)
       for i, data in enumerate(dataloader):
           # x shape = 50 x 2 x 64 x 64
           # y shape = 50 x 1 x 64 x 64
           x, y_real = data[0].to(device), data[1].to(device)
+          y_real = y_real.view(-1, 64 * 64)
 
           # zero the parameter gradients
           optimizer.zero_grad()
 
           # forward + backward + optimize
-          y_pred = minimalCNN(x)
+          y_pred = cnn(x)
           loss = criterion(y_pred, y_real)
           loss.backward()
           optimizer.step()
@@ -71,7 +66,7 @@ def train_minimal_cnn(path = loader.DATASET_PATH):
               print('[%d] loss: %.3f' % (i, running_loss / 10))
               running_loss = 0.0
       scheduler.step()
-    return minimalCNN
+    return cnn
 
 def plot_3_frames(model):
     frames = []
@@ -79,10 +74,13 @@ def plot_3_frames(model):
     x, y = dataset_3_slices.__getitem__(0)
     frame_1, frame_3 = x[0] * 255, x[1] * 255
     x = x.unsqueeze(0).to(device)
-    frame_2 = (model(x)[0, 0] * 255).detach().cpu().numpy()
+    frame_2 = model(x)
+    frame_2 = frame_2.view(64, 64)
+    frame_2 = frame_2 * 255
+    frame_2 = frame_2.detach().cpu().numpy()
     [util.plot_grayscale(f) for f in [frame_1, frame_2, frame_3]]
 
 if __name__ == '__main__':
-    # model = train_minimal_cnn(PATH)
-    model = SimpleCNN()
+#     model = train_minimal_cnn(PATH)
+    model = SimpleCNN().to(device)
     plot_3_frames(model)
