@@ -29,7 +29,7 @@ PATH_EGO_RAW = join(RAW_VIDEO_PATH, EGO_DIR)
 FPS_EGO = 30
 CHARDES_EGO = VidDataset(PATH_EGO_RAW, FPS_EGO)
 
-SCALE_BIG = 200
+SCALE_BIG = 300
 SCALE_SMALL = 100
 
 TRAIN_TEST_VALIDATION = 0.9, 0.05, 0.05
@@ -76,10 +76,9 @@ def compute_train_test_val_video_lists(videos_dir):
     train_videos = list(remaining_videos - set(val_videos))
     return train_videos, test_videos, val_videos
 
-def frames_from_videos(videos_dir, videos_list, frames_dir, scale, fps, counter = 0):
-    for video in videos_list:
+def frames_from_videos(videos_paths, frames_dir, scale, fps, counter = 0):
+    for file_in in videos_paths:
         try:
-            file_in = join(videos_dir, video)
             file_out = join(frames_dir, str(counter))
             make_dir_if_missing(file_out)
             extract_frames(file_in, file_out, scale, fps)
@@ -91,20 +90,22 @@ def frames_from_videos(videos_dir, videos_list, frames_dir, scale, fps, counter 
         print('Step', counter)
     return counter
 
-if __name__ == '__main__':
+def write_list_to_file(list, file):
+    with open(file, 'a') as f:
+        f.writelines('\n'.join(list) + '\n')
+
+def merge_datasets_and_extract_frames(datasets, scale):
     make_frames_dir()
     counter = 0
-    for vid_dataset in [SOMETHING_SOMETHING, CHARDES, CHARDES_EGO]:
+    for vid_dataset in datasets:
         train_videos, test_videos, val_videos = compute_train_test_val_video_lists(vid_dataset.dir)
         train_test_val = [(TRAIN_PATH, train_videos), (TEST_PATH, test_videos), (VALIDATION_PATH, val_videos)]
         for frames_path, videos in train_test_val:
-            counter = frames_from_videos(vid_dataset.dir, videos, frames_path, SCALE_BIG, vid_dataset.fps, counter)
+            videos_list_file = join(FRAMES_PATH, os.path.split(frames_path)[-1] + '_list')
+            videos_paths = [join(vid_dataset.dir, vid) for vid in videos]
+            write_list_to_file(videos_paths, videos_list_file)
+            counter = frames_from_videos(videos_paths, frames_path, scale, vid_dataset.fps, counter)
 
-    # train_videos, test_videos, val_videos = compute_train_test_val_video_lists(videos_dir)
-    # counter = frames_from_videos(PATH_SOMETHING_SOMETHING_RAW, FRAMES_PATH, scale = SCALE_BIG, fps = FPS_SOMETHING_SOEMTHING)
-    # counter = frames_from_videos(PATH_CHARDES_RAW, FRAMES_PATH, scale = SCALE_BIG, fps = FPS_CHARDES, counter=counter)
-    # counter = frames_from_videos(PATH_EGO_RAW, FRAMES_PATH, scale = SCALE_BIG, fps = FPS_EGO, counter=counter)
-
-# TODO split train / test / validation or train / test ?
-# TODO cum faci splitul per dataset chardes, chardesego, jester, something-something
-# TODO vezi cum aduci si scale mic pt features intermediare
+if __name__ == '__main__':
+    datasets = [SOMETHING_SOMETHING, CHARDES, CHARDES_EGO]
+    merge_datasets_and_extract_frames(datasets, SCALE_BIG)
