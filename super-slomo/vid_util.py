@@ -7,6 +7,14 @@ class VidDataset():
         self.dir = dir
         self.fps = fps
 
+class VideoInfo():
+    def __init__(self, path, fps):
+        self.path = path
+        self.fps = int(fps)
+
+    def __repr__(self):
+        return self.path + ' ' + self.fps
+
 DATASET_ROOT = 'C:\\DOC\\Vid compress\\Dataset\\Experimental'
 RAW_VIDEO_PATH = join(DATASET_ROOT, 'raw')
 FRAMES_PATH = join(DATASET_ROOT, 'frames')
@@ -79,11 +87,31 @@ def compute_train_test_val_video_lists(videos_dir):
     remaining_videos = all_videos - set(test_videos)
     val_videos = random.sample(remaining_videos, val_count)
     train_videos = list(remaining_videos - set(val_videos))
-    return train_videos, test_videos, val_videos
+    return {
+        TRAIN_PATH: train_videos,
+        TEST_PATH: test_videos,
+        VALIDATION_PATH: val_videos
+    }
 
-def frames_from_videos(videos_paths, frames_dir, scale, fps, counter = 0):
+def __frames_from_videos(videos_paths, frames_dir, scale, fps, counter = 0):
     for file_in in videos_paths:
         try:
+            file_out = join(frames_dir, str(counter))
+            make_dir_if_missing(file_out)
+            extract_frames(file_in, file_out, scale, fps)
+            frames_count = len(os.listdir(file_out))
+            make_metadata_file(fps, frames_count, scale, file_in, file_out)
+        except Exception as e:
+            print('Exception at counter', counter, '; File', file_in, e)
+        counter += 1
+        print('Step', counter)
+    return counter
+
+def frames_from_videos(videos_info, frames_dir, scale, counter = 0):
+    for vid_info in videos_info:
+        try:
+            fps = vid_info.fps
+            file_in = vid_info.path
             file_out = join(frames_dir, str(counter))
             make_dir_if_missing(file_out)
             extract_frames(file_in, file_out, scale, fps)
@@ -107,16 +135,23 @@ def read_train_test_val_splits_from_files():
     train_list = read_videos_list_from_file(TRAIN_LIST_PATH)
     test_list = read_videos_list_from_file(TEST_LIST_PATH)
     val_list = read_videos_list_from_file(VALIDATION_LIST_PATH)
-    return train_list, test_list, val_list
+    return {
+        TRAIN_PATH: train_list,
+        TEST_PATH: test_list,
+        VALIDATION_PATH: val_list
+    }
+
+def path_and_fps(vid_dataset, video):
+    return '{path};{fps}'.format(path = join(vid_dataset.dir, video), fps = vid_dataset.fps)
+
 
 def create_train_test_val_file_splits(datasets):
     for vid_dataset in datasets:
-        train_videos, test_videos, val_videos = compute_train_test_val_video_lists(vid_dataset.dir)
-        train_test_val = [(TRAIN_PATH, train_videos), (TEST_PATH, test_videos), (VALIDATION_PATH, val_videos)]
-        for frames_path, videos in train_test_val:
+        train_test_val = compute_train_test_val_video_lists(vid_dataset.dir)
+        for frames_path, videos in train_test_val.items():
             videos_list_file = join(FRAMES_PATH, os.path.split(frames_path)[-1] + '_list')
-            videos_paths = [join(vid_dataset.dir, vid) for vid in videos]
-            write_list_to_file(videos_paths, videos_list_file)
+            videos_info = [path_and_fps(vid_dataset, vid) for vid in videos]
+            write_list_to_file(videos_info, videos_list_file)
 
 def __merge_datasets_and_extract_frames(datasets, scale):
     counter = 0
@@ -129,14 +164,20 @@ def __merge_datasets_and_extract_frames(datasets, scale):
             write_list_to_file(videos_paths, videos_list_file)
             counter = frames_from_videos(videos_paths, frames_path, scale, vid_dataset.fps, counter)
 
-def merge_datasets_and_extract_frames(train_test_val_video_paths, scale):
+def get_vide_info_from_string(text: str):
+    split = text.split(';')
+    return VideoInfo(path = split[0], fps = split[1])
+
+def merge_datasets_and_extract_frames(train_test_val, scale):
     counter = 0
-    train_list, test_list, val_list = train_test_val_video_paths
+    for frames_path, videos_info_text in train_test_val.items():
+        video_infos = [get_vide_info_from_string(vid_inf) for vid_inf in videos_info_text]
+        counter = frames_from_videos(video_infos, frames_path, scale, counter)
 
 
 if __name__ == '__main__':
     make_frames_dir()
     datasets = [SOMETHING_SOMETHING, CHARDES, CHARDES_EGO]
     create_train_test_val_file_splits(datasets)
-    train_test_val_video_paths = read_train_test_val_splits_from_files()
-    merge_datasets_and_extract_frames(train_test_val_video_paths, SCALE_BIG)
+    train_test_val = read_train_test_val_splits_from_files()
+    merge_datasets_and_extract_frames(train_test_val, SCALE_BIG)
