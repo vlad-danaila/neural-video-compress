@@ -10,9 +10,14 @@ class VidDataset():
 DATASET_ROOT = 'C:\\DOC\\Vid compress\\Dataset\\Experimental'
 RAW_VIDEO_PATH = join(DATASET_ROOT, 'raw')
 FRAMES_PATH = join(DATASET_ROOT, 'frames')
+
 TRAIN_PATH = join(FRAMES_PATH, 'train')
 TEST_PATH = join(FRAMES_PATH, 'test')
 VALIDATION_PATH = join(FRAMES_PATH, 'validation')
+
+TRAIN_LIST_PATH = join(FRAMES_PATH, 'train_list')
+TEST_LIST_PATH = join(FRAMES_PATH, 'test_list')
+VALIDATION_LIST_PATH = join(FRAMES_PATH, 'validation_list')
 
 SOMETHING_SOMETHING_DIR = 'Something_something'
 PATH_SOMETHING_SOMETHING_RAW = join(RAW_VIDEO_PATH, SOMETHING_SOMETHING_DIR)
@@ -94,8 +99,26 @@ def write_list_to_file(list, file):
     with open(file, 'a') as f:
         f.writelines('\n'.join(list) + '\n')
 
-def merge_datasets_and_extract_frames(datasets, scale):
-    make_frames_dir()
+def read_videos_list_from_file(file_path):
+    with open(file_path, 'r') as file:
+        return file.readlines()
+
+def read_train_test_val_splits_from_files():
+    train_list = read_videos_list_from_file(TRAIN_LIST_PATH)
+    test_list = read_videos_list_from_file(TEST_LIST_PATH)
+    val_list = read_videos_list_from_file(VALIDATION_LIST_PATH)
+    return train_list, test_list, val_list
+
+def create_train_test_val_file_splits(datasets):
+    for vid_dataset in datasets:
+        train_videos, test_videos, val_videos = compute_train_test_val_video_lists(vid_dataset.dir)
+        train_test_val = [(TRAIN_PATH, train_videos), (TEST_PATH, test_videos), (VALIDATION_PATH, val_videos)]
+        for frames_path, videos in train_test_val:
+            videos_list_file = join(FRAMES_PATH, os.path.split(frames_path)[-1] + '_list')
+            videos_paths = [join(vid_dataset.dir, vid) for vid in videos]
+            write_list_to_file(videos_paths, videos_list_file)
+
+def __merge_datasets_and_extract_frames(datasets, scale):
     counter = 0
     for vid_dataset in datasets:
         train_videos, test_videos, val_videos = compute_train_test_val_video_lists(vid_dataset.dir)
@@ -106,6 +129,14 @@ def merge_datasets_and_extract_frames(datasets, scale):
             write_list_to_file(videos_paths, videos_list_file)
             counter = frames_from_videos(videos_paths, frames_path, scale, vid_dataset.fps, counter)
 
+def merge_datasets_and_extract_frames(train_test_val_video_paths, scale):
+    counter = 0
+    train_list, test_list, val_list = train_test_val_video_paths
+
+
 if __name__ == '__main__':
+    make_frames_dir()
     datasets = [SOMETHING_SOMETHING, CHARDES, CHARDES_EGO]
-    merge_datasets_and_extract_frames(datasets, SCALE_BIG)
+    create_train_test_val_file_splits(datasets)
+    train_test_val_video_paths = read_train_test_val_splits_from_files()
+    merge_datasets_and_extract_frames(train_test_val_video_paths, SCALE_BIG)
