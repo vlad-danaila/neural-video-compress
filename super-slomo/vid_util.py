@@ -2,6 +2,7 @@ import os
 from os.path import join, exists
 import random
 import numpy as np
+import shutil
 
 class VidDataset():
     def __init__(self, dir, fps):
@@ -66,7 +67,7 @@ def make_frames_dir():
     make_dir_if_missing(VALIDATION_PATH)
 
 def extract_frames(in_file, out_file, scale, fps):
-    cmd = 'ffmpeg -hide_banner -loglevel panic -i "{in_file}" -vf scale=w={scale}:h={scale}:force_original_aspect_ratio=decrease -r {fps}/1 "{out_file}{separator}%03d.jpg"'\
+    cmd = 'ffmpeg -hide_banner -loglevel panic -i "{in_file}" -vf scale=w={scale}:h={scale}:force_original_aspect_ratio=decrease -r {fps}/1 "{out_file}{separator}%d.jpg"'\
         .format(in_file = in_file, out_file = out_file, scale = scale, fps = fps, separator = os.path.sep)
     status_code = os.system(cmd)
     check_error(status_code, 'While extracting frames from file {}, command was ##{}##'.format(in_file, cmd))
@@ -101,17 +102,21 @@ def frames_from_videos(videos_info, frames_dir, scale, counter = 0):
         try:
             fps = vid_info.fps
             file_in = vid_info.path
-            dir_out = join(frames_dir, str(counter))
-            make_dir_if_missing(dir_out)
-            extract_frames(file_in, dir_out, scale, fps)
-            frames_count = len(os.listdir(dir_out))
+            dir_temp = join(frames_dir, 'temp_{}'.format(counter))
+            make_dir_if_missing(dir_temp)
+            extract_frames(file_in, dir_temp, scale, fps)
+            frames_count = len(os.listdir(dir_temp))
             if frames_count > FRAME_COUNT_TRESHOLD_FOR_VIDEO_SPLIT:
-                split_frame_folder(frames_count, dir_out, counter)
-            make_metadata_file(fps, frames_count, scale, file_in, dir_out)
+                split_frame_folder(frames_count, dir_temp, frames_dir, counter)
+            else:
+                os.rename(dir_temp, join(frames_dir, str(counter)))
+            make_metadata_file(fps, frames_count, scale, file_in, dir_temp)
+            # TODO Handle metadata file in context of video split
         except Exception as e:
             print('Exception at counter', counter, '; File', file_in, e)
-        counter += 1
         print('Step', counter)
+        # TODO handle counter in the context of video split
+        counter += 1
     return counter
 
 def compute_video_split_intervals(frames_count):
@@ -122,9 +127,15 @@ def compute_video_split_intervals(frames_count):
     intervals[0][0] = 1
     return intervals
 
-def split_frame_folder(frames_count, frames_dir, counter):
+def split_frame_folder(frames_count, frames_dir, parent_dir, counter):
     intervals = compute_video_split_intervals(frames_count)
-    print(intervals)
+    for interval in intervals:
+        out_dir = join(parent_dir, str(counter))
+        make_dir_if_missing(out_dir)
+        for i in range(interval[0], interval[-1] + 1):
+            frame_file = join(frames_dir, str(i) + '.jpg')
+            shutil.move(frame_file, out_dir)
+        counter += 1
     return counter
 
 def write_list_to_file(list, file):
@@ -170,6 +181,6 @@ if __name__ == '__main__':
     make_frames_dir()
     # datasets = [SOMETHING_SOMETHING, CHARDES, CHARDES_EGO]
     datasets = [CHARDES, CHARDES_EGO]
-    create_train_test_val_file_splits(datasets)
+    # create_train_test_val_file_splits(datasets)
     train_test_val = read_train_test_val_splits_from_files()
     merge_datasets_and_extract_frames(train_test_val, SCALE_BIG)
