@@ -47,7 +47,6 @@ SCALE_BIG = 300
 SCALE_SMALL = 150
 
 FRAME_COUNT_TRESHOLD_FOR_VIDEO_SPLIT = 100
-VIDEO_SPLITS = 10
 
 TRAIN_TEST_VALIDATION = 0.9, 0.05, 0.05
 
@@ -117,7 +116,8 @@ def frames_from_videos(videos_info, frames_dir, scale, counter = 0):
 
 def compute_video_split_intervals(frames_count):
     # Video frames are numbered starting with 1
-    bounderies = np.floor(np.linspace(1, frames_count, VIDEO_SPLITS + 1))
+    split_numb = (frames_count // FRAME_COUNT_TRESHOLD_FOR_VIDEO_SPLIT) + 2
+    bounderies = np.floor(np.linspace(1, frames_count, split_numb))
     intervals = [[int(bounderies[i] + 1), int(bounderies[i + 1])] for i in range(len(bounderies) - 1)]
     intervals[0][0] = 1
     return intervals
