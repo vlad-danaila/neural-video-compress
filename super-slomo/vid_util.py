@@ -109,7 +109,6 @@ def frames_from_videos(videos_info, frames_dir, scale, counter = 0):
             frames_count = len(os.listdir(dir_temp))
             if frames_count > FRAME_COUNT_TRESHOLD_FOR_VIDEO_SPLIT:
                 counter = split_frame_folder(frames_count, dir_temp, frames_dir, counter, fps, scale, file_in)
-                # TODO Handle metadata file in context of video split
             else:
                 os.rename(dir_temp, join(frames_dir, str(counter)))
                 make_metadata_file(fps, frames_count, scale, file_in, dir_temp)
