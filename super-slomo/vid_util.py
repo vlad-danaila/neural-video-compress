@@ -97,6 +97,7 @@ def compute_train_test_val_video_lists(videos_dir):
         VALIDATION_PATH: val_videos
     }
 
+# TODO Remove temp folder aftor not needed anymore of the first if branch
 def frames_from_videos(videos_info, frames_dir, scale, counter = 0):
     for vid_info in videos_info:
         try:
@@ -107,16 +108,15 @@ def frames_from_videos(videos_info, frames_dir, scale, counter = 0):
             extract_frames(file_in, dir_temp, scale, fps)
             frames_count = len(os.listdir(dir_temp))
             if frames_count > FRAME_COUNT_TRESHOLD_FOR_VIDEO_SPLIT:
-                split_frame_folder(frames_count, dir_temp, frames_dir, counter)
+                counter = split_frame_folder(frames_count, dir_temp, frames_dir, counter, fps, scale, file_in)
+                # TODO Handle metadata file in context of video split
             else:
                 os.rename(dir_temp, join(frames_dir, str(counter)))
-            make_metadata_file(fps, frames_count, scale, file_in, dir_temp)
-            # TODO Handle metadata file in context of video split
+                make_metadata_file(fps, frames_count, scale, file_in, dir_temp)
+                counter += 1
         except Exception as e:
             print('Exception at counter', counter, '; File', file_in, e)
         print('Step', counter)
-        # TODO handle counter in the context of video split
-        counter += 1
     return counter
 
 def compute_video_split_intervals(frames_count):
@@ -127,7 +127,7 @@ def compute_video_split_intervals(frames_count):
     intervals[0][0] = 1
     return intervals
 
-def split_frame_folder(frames_count, frames_dir, parent_dir, counter):
+def split_frame_folder(frames_count, frames_dir, parent_dir, counter, fps, scale, file_in):
     intervals = compute_video_split_intervals(frames_count)
     for interval in intervals:
         out_dir = join(parent_dir, str(counter))
@@ -135,6 +135,8 @@ def split_frame_folder(frames_count, frames_dir, parent_dir, counter):
         for i in range(interval[0], interval[-1] + 1):
             frame_file = join(frames_dir, str(i) + '.jpg')
             shutil.move(frame_file, out_dir)
+        frame_count_for_split = interval[-1] - interval[0] + 1
+        make_metadata_file(fps, frame_count_for_split, scale, file_in, out_dir)
         counter += 1
     return counter
 
@@ -181,6 +183,7 @@ if __name__ == '__main__':
     make_frames_dir()
     # datasets = [SOMETHING_SOMETHING, CHARDES, CHARDES_EGO]
     datasets = [CHARDES, CHARDES_EGO]
+    # Uncomment if not having train/test/validation file splits
     # create_train_test_val_file_splits(datasets)
     train_test_val = read_train_test_val_splits_from_files()
     merge_datasets_and_extract_frames(train_test_val, SCALE_BIG)
