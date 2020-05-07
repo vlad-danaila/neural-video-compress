@@ -178,6 +178,10 @@ def merge_datasets_and_extract_frames(train_test_val, scale):
         video_infos = [get_vide_info_from_string(vid_inf) for vid_inf in videos_info_text]
         counter = frames_from_videos(video_infos, frames_path, scale, counter)
 
+def find_fps(vid_file):
+    cmd = 'ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate {}'.format(vid_file)
+    # TODO : Not all videos have the same fps rate
+
 if __name__ == '__main__':
     make_frames_dir()
     # datasets = [SOMETHING_SOMETHING, CHARDES, CHARDES_EGO]
