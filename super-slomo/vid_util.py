@@ -97,7 +97,6 @@ def compute_train_test_val_video_lists(videos_dir):
         VALIDATION_PATH: val_videos
     }
 
-# TODO Remove temp folder aftor not needed anymore of the first if branch
 def frames_from_videos(videos_info, frames_dir, scale, counter = 0):
     for vid_info in videos_info:
         try:
@@ -109,6 +108,7 @@ def frames_from_videos(videos_info, frames_dir, scale, counter = 0):
             frames_count = len(os.listdir(dir_temp))
             if frames_count > FRAME_COUNT_TRESHOLD_FOR_VIDEO_SPLIT:
                 counter = split_frame_folder(frames_count, dir_temp, frames_dir, counter, fps, scale, file_in)
+                os.rmdir(dir_temp)
             else:
                 os.rename(dir_temp, join(frames_dir, str(counter)))
                 make_metadata_file(fps, frames_count, scale, file_in, dir_temp)
