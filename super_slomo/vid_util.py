@@ -3,6 +3,7 @@ from os.path import join, exists
 import random
 import numpy as np
 import shutil
+import subprocess
 
 class VidDataset():
     def __init__(self, dir, fps):
@@ -100,10 +101,10 @@ def compute_train_test_val_video_lists(videos_dir):
 def frames_from_videos(videos_info, frames_dir, scale, counter = 0):
     for vid_info in videos_info:
         try:
-            fps = vid_info.fps
             file_in = vid_info.path
             dir_temp = join(frames_dir, 'temp_{}'.format(counter))
             make_dir_if_missing(dir_temp)
+            fps = find_fps(file_in)
             extract_frames(file_in, dir_temp, scale, fps)
             frames_count = len(os.listdir(dir_temp))
             if frames_count > FRAME_COUNT_TRESHOLD_FOR_VIDEO_SPLIT:
@@ -179,8 +180,14 @@ def merge_datasets_and_extract_frames(train_test_val, scale):
         counter = frames_from_videos(video_infos, frames_path, scale, counter)
 
 def find_fps(vid_file):
-    cmd = 'ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate {}'.format(vid_file)
-    # TODO : Not all videos have the same fps rate
+    cmd = 'ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate "{}"'.format(vid_file)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    out, err = proc.communicate()
+    if err:
+        print(err)
+        raise err
+    fps = eval(out[:-2])
+    return fps
 
 if __name__ == '__main__':
     make_frames_dir()
